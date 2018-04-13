@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import shutil
-import sys
 import time
 
 import torch
@@ -16,7 +15,7 @@ from utils.data_loader import SegList
 from utils.evaluation_utils import accuracy, AverageMeter
 from utils.training_utils import adjust_learning_rate, save_checkpoint
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 FORMAT = "[%(asctime)-15s %(filename)s:%(lineno)d %(funcName)s] %(message)s"
 logging.basicConfig(format=FORMAT)
 logger = logging.getLogger(__name__)
@@ -123,14 +122,14 @@ def train(train_loader, model, criterion, optimizer, epoch,
 
 
 def train_seg(args):
-    print(' '.join(sys.argv))
     for k, v in args.__dict__.items():
         print(k, ':', v)
 
-    single_model = DenseSeg(args.arch, args.num_class, None, pretrained=True)
-    if args.pretrained:
-        single_model.load_state_dict(torch.load(args.pretrained))
+    single_model = DenseSeg(args.arch, args.num_class, pretrained=True)
     model = torch.nn.DataParallel(single_model).cuda()
+    if args.pretrained:
+        checkpoint = torch.load(args.pretrained)
+        model.load_state_dict(checkpoint['state_dict'])
     criterion = nn.NLLLoss2d(ignore_index=255)
     criterion.cuda()
 
@@ -208,8 +207,9 @@ def train_seg(args):
             'state_dict': model.state_dict(),
             'best_prec1': best_prec1,
         }, is_best, filename=checkpoint_path)
+
         if (epoch + 1) % 10 == 0:
-            history_path = 'checkpoint_{:03d}.pth.tar'.format(epoch + 1)
+            history_path = './model_save_dir/checkpoint_{:03d}.pth.tar'.format(epoch + 1)
             shutil.copyfile(checkpoint_path, history_path)
 
 

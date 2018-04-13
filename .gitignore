@@ -1,2 +1,6 @@
 .idea/
 model_save_dir/
+
+
+# models
+*.tar

@@ -8,7 +8,7 @@ class DenseSeg(nn.Module):
     This is a preload densenet121 model initialisation
     """
 
-    def __init__(self, model_name, classes, pretrained_model=None,
+    def __init__(self, model_name, classes,
                  transition_layer=(3, 5, 7, 9, 11),
                  conv_num_features=(64, 256, 512, 1024, 1024),
                  pretrained=True):
@@ -23,10 +23,6 @@ class DenseSeg(nn.Module):
 
         super(DenseSeg, self).__init__()
         model = densenet.__dict__.get(model_name)(pretrained=pretrained, num_classes=1000)
-        pmodel = nn.DataParallel(model)
-
-        if pretrained_model is not None:
-            pmodel.load_state_dict(pretrained_model)
 
         # self.layer are the base densenet layers
         self.layer = list()
@@ -43,6 +39,9 @@ class DenseSeg(nn.Module):
             self.conv_layer.append(
                 nn.Conv2d(conv_num_features[i + 1], out_channels=1, kernel_size=1, stride=1, bias=True).cuda())
 
+        # The following two lines are required to register to the model.state_dict()
+        self.base_down = nn.ModuleList(self.layer)
+        self.base_up = nn.ModuleList(self.conv_layer)
         # final conv layer for combining the multiple streams
         self.seg = nn.Conv2d(len(transition_layer), classes, kernel_size=1, bias=True)
 

@@ -19,5 +19,5 @@ def adjust_learning_rate(args, optimizer, epoch):
 def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
     torch.save(state, filename)
     if is_best:
-        shutil.copyfile(filename, 'model_best.pth.tar')
+        shutil.copyfile(filename, './model_save_dir/model_best.pth.tar')
 
