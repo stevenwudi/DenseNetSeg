@@ -15,11 +15,16 @@ from utils.data_loader import SegList
 from utils.evaluation_utils import accuracy, AverageMeter
 from utils.training_utils import adjust_learning_rate, save_checkpoint
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+from utils.logger import Logger, to_np
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 FORMAT = "[%(asctime)-15s %(filename)s:%(lineno)d %(funcName)s] %(message)s"
 logging.basicConfig(format=FORMAT)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+# set the tensorboard Loger
+logger_tf = Logger('./logs')
 
 
 def validate(val_loader, model, criterion, eval_score=None, print_freq=10):
@@ -67,7 +72,7 @@ def validate(val_loader, model, criterion, eval_score=None, print_freq=10):
     return score.avg
 
 
-def train(train_loader, model, criterion, optimizer, epoch,
+def train(train_loader, model, criterion, optimizer, epoch, args, num_batches,
           eval_score=None, print_freq=10):
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -119,6 +124,20 @@ def train(train_loader, model, criterion, optimizer, epoch,
                         'Score {top1.val:.3f} ({top1.avg:.3f})'.format(
                 epoch, i, len(train_loader), batch_time=batch_time,
                 data_time=data_time, loss=losses, top1=scores))
+
+            #================= tensorboard logging ====================================#
+            info = {'NLLLoss2d': losses.val, 'accuracy': scores.val}
+            # (1) Log the scalar values
+            step = epoch * args.batch_size * num_batches + i * args.batch_size
+
+            for tag, value in info.items():
+                logger_tf.scalar_summary(tag, value, step)
+
+            # (2) Log values and gradients of the parameters (histogram)
+            for tag, value in model.named_parameters():
+                tag = tag.replace('.', '/')
+                logger_tf.histo_summary(tag, to_np(value), step)
+                logger_tf.histo_summary(tag+'/grad', to_np(value.grad), step)
 
 
 def train_seg(args):
@@ -180,8 +199,7 @@ def train_seg(args):
             start_epoch = checkpoint['epoch']
             best_prec1 = checkpoint['best_prec1']
             model.load_state_dict(checkpoint['state_dict'])
-            print("=> loaded checkpoint '{}' (epoch {})"
-                  .format(args.resume, checkpoint['epoch']))
+            print("=> loaded checkpoint '{}' (epoch {})".format(args.resume, checkpoint['epoch']))
         else:
             print("=> no checkpoint found at '{}'".format(args.resume))
 
@@ -193,7 +211,7 @@ def train_seg(args):
         lr = adjust_learning_rate(args, optimizer, epoch)
         logger.info('Epoch: [{0}]\tlr {1:.06f}'.format(epoch, lr))
         # train for one epoch
-        train(train_loader, model, criterion, optimizer, epoch, eval_score=accuracy)
+        train(train_loader, model, criterion, optimizer, epoch, args, len(train_loader), eval_score=accuracy)
 
         # evaluate on validation set
         prec1 = validate(val_loader, model, criterion, eval_score=accuracy)

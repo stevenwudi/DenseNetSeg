@@ -1,5 +1,7 @@
 .idea/
 model_save_dir/
+logs/
+*.pyc
 
 
 # models

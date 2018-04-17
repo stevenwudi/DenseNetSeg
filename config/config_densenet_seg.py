@@ -13,8 +13,8 @@ lr              = 0.01
 momentum        = 0.9
 weight_decay    = 1e-4
 
-pretrained      = './model_save_dir/checkpoint_latest.pth.tar'  # 'path to latest checkpoint (default: none)'
-resume          = None
+pretrained      = None  # './model_save_dir/checkpoint_latest.pth.tar'  # 'path to latest checkpoint (default: none)'
+resume          = './model_save_dir/checkpoint_latest.pth.tar'
 lr_mode         = 'poly'  # ['step', 'poly']
 # data augmentation
 random_scale    = 2
