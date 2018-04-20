@@ -1,5 +1,5 @@
-import torch
-from os.path import exists, join, split
+import torch.utils.data
+from os.path import exists, join
 from PIL import Image
 
 

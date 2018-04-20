@@ -14,25 +14,27 @@ from torch.autograd import Variable
 
 from utils.evaluation_utils import CITYSCAPE_PALETTE
 from models.DenseNetSeg import DenseSeg
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 
 def load_model():
     # image loading and preprocessing
     loader = importlib.machinery.SourceFileLoader('config', './config/config_densenet_seg.py')
-    config = loader.load_module()
-    data_dir = config.data_dir
+    args = loader.load_module()
+    data_dir = args.data_dir
     info = json.load(open(join(data_dir, 'info.json'), 'r'))
     data_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean=info['mean'], std=info['std'])
     ])
     # model definition
-    single_model = DenseSeg(config.arch, config.num_class, pretrained=True)
+    single_model = DenseSeg(args.arch, args.num_class, args.transition_layer,
+                            args.conv_num_features, args.out_channels_num,
+                            pretrained=True)
     model = torch.nn.DataParallel(single_model).cuda()
 
-    if config.pretrained:
-        checkpoint = torch.load(config.pretrained)
+    if args.pretrained:
+        checkpoint = torch.load(args.pretrained)
         model.load_state_dict(checkpoint['state_dict'])
 
     model.eval()
@@ -62,7 +64,7 @@ def test_single(filepath, image_name, save_file_path, model, data_transform):
 
 def main():
 
-    sequence_name = 'stuttgart_01'
+    sequence_name = 'stuttgart_00'
     filepath = "/media/samsumg_1tb/CITYSCAPE/leftImg8bit/demoVideo/"+sequence_name
     save_file_path = filepath+'_densenet_seg/'
     model, data_transform = load_model()
