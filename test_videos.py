@@ -14,7 +14,7 @@ from torch.autograd import Variable
 
 from utils.evaluation_utils import CITYSCAPE_PALETTE
 from models.DenseNetSeg import DenseSeg
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 
 def load_model():
@@ -64,7 +64,7 @@ def test_single(filepath, image_name, save_file_path, model, data_transform):
 
 def main():
 
-    sequence_name = 'stuttgart_00'
+    sequence_name = 'stuttgart_02'
     filepath = "/media/samsumg_1tb/CITYSCAPE/leftImg8bit/demoVideo/"+sequence_name
     save_file_path = filepath+'_densenet_seg/'
     model, data_transform = load_model()

@@ -15,7 +15,7 @@ from utils.data_loader import SegList
 from utils.evaluation_utils import accuracy, AverageMeter
 from utils.training_utils import adjust_learning_rate, save_checkpoint
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 
 def validate(val_loader, model, criterion, eval_score=None, print_freq=10):
@@ -58,7 +58,7 @@ def validate(val_loader, model, criterion, eval_score=None, print_freq=10):
                 i, len(val_loader), batch_time=batch_time, loss=losses,
                 score=score))
 
-        print(' * Score {top1.avg:.3f}'.format(top1=score))
+    print(' * Score {top1.avg:.3f}'.format(top1=score))
 
     return score.avg
 

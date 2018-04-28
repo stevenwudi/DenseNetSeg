@@ -3,7 +3,7 @@ import sys
 from datetime import datetime
 from utils.logger import Logger
 import importlib.machinery
-import time
+
 
 class Logger_std(object):
     def __init__(self, logfile):
@@ -19,7 +19,6 @@ class Logger_std(object):
         # this handles the flush command by doing nothing.
         # you might want to specify some extra behavior here.
         pass
-
 
 
 class Configuration:

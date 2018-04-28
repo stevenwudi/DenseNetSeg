@@ -13,7 +13,7 @@ lr              = 0.01
 momentum        = 0.9
 weight_decay    = 1e-4
 
-pretrained      = None  #'./model_save_dir/checkpoint_070.pth.tar' # './model_save_dir/checkpoint_250.pth.tar'  # 'path to latest checkpoint (default: none)'
+pretrained      = './model_save_dir/model_best.pth.tar'  #'./model_save_dir/checkpoint_070.pth.tar' # './model_save_dir/checkpoint_250.pth.tar'  # 'path to latest checkpoint (default: none)'
 resume          = None # './model_save_dir/checkpoint_010.pth.tar'
 lr_mode         = 'poly'  # ['step', 'poly']
 # data augmentation
@@ -30,5 +30,5 @@ ppl_out_channels_num = (32, 64, 128, 256)
 
 # Validation/Test parameters
 multi_scale     = False
-evaluate        = False
+evaluate        = True
 
