@@ -30,21 +30,25 @@ class Configuration:
         model_save_suffix = "crop_size_" + str(config.crop_size)
         model_save_suffix += "_out_channels_num_" + str(config.out_channels_num)
         model_save_suffix += "_ppl_out_channels_num_" + str(config.ppl_out_channels_num)
+        if config.dilation:
+            model_save_suffix += "_dilation_" + str(config.dilation)
+
         config.model_save_suffix = model_save_suffix + '.pth.tar'
-        if not os.path.exists('./logs'):
+        if not os.path.exists('./logs') and not config.cmd == 'test':
             os.mkdir('./logs')
 
         config.exp_dir = os.path.join('./logs', model_save_suffix + '_' * 5 + datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
-        if not os.path.exists(config.exp_dir):
+        if not os.path.exists(config.exp_dir) and not config.cmd == 'test':
             os.mkdir(config.exp_dir)
 
-        config.logger_tf = Logger('./logs')
+        if not config.cmd == 'test':
+            config.logger_tf = Logger('./logs')
 
-        # If we load from a pretrained model
-        # Enable log file
-        sys.stdout = Logger_std(os.path.join(config.exp_dir, "logfile.log"))
-        #sys.stdout = open(os.path.join(config.exp_dir, "logfile.log"), 'w')
-        print(help(config), flush=True)
+            # If we load from a pretrained model
+            # Enable log file
+            sys.stdout = Logger_std(os.path.join(config.exp_dir, "logfile.log"))
+            #sys.stdout = open(os.path.join(config.exp_dir, "logfile.log"), 'w')
+            print(help(config), flush=True)
 
         self.config = config
 

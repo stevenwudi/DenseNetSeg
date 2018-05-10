@@ -11,7 +11,7 @@ from torch import nn
 from config.configuration import Configuration
 from models.DenseNetSeg import DenseSeg
 from utils import data_transform_utils
-from utils.data_loader import SegList
+from utils.data_loader import SegList, SegListMS
 from utils.evaluation_utils import accuracy, AverageMeter
 from utils.training_utils import adjust_learning_rate, save_checkpoint
 
@@ -130,6 +130,38 @@ def train(args, train_loader, model, criterion, optimizer, epoch, eval_score=Non
                 #     logger_tf.histo_summary(tag+'/grad', to_np(value.grad), logger_tf.step)
 
 
+def test(eval_data_loader, model, output_dir='pred', save_vis=False):
+    from torch.autograd import Variable
+    import logging
+    from utils.evaluation_utils import CITYSCAPE_PALETTE, save_output_images, save_colorful_images
+    FORMAT = "[%(asctime)-15s %(filename)s:%(lineno)d %(funcName)s] %(message)s"
+    logging.basicConfig(format=FORMAT)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+
+    model.eval()
+    batch_time = AverageMeter()
+    data_time = AverageMeter()
+    end = time.time()
+    for iter, (image, label, name) in enumerate(eval_data_loader):
+        data_time.update(time.time() - end)
+        image_var = Variable(image, requires_grad=False, volatile=True)
+        final = model(image_var)
+        _, pred = torch.max(final, 1)
+        pred = pred.cpu().data.numpy()
+        batch_time.update(time.time() - end)
+        if save_vis:
+            save_output_images(pred, name, output_dir)
+            save_colorful_images(pred, name, output_dir + '_color', CITYSCAPE_PALETTE)
+
+        end = time.time()
+        logger.info('Eval: [{0}/{1}]\t'
+                    'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                    'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                    .format(iter, len(eval_data_loader), batch_time=batch_time,
+                            data_time=data_time))
+
+
 def train_seg(args):
     single_model = DenseSeg(model_name=args.arch,
                             classes=args.num_class,
@@ -137,6 +169,7 @@ def train_seg(args):
                             conv_num_features=args.conv_num_features,
                             out_channels_num=args.out_channels_num,
                             ppl_out_channels_num=args.ppl_out_channels_num,
+                            dilation=args.dilation,
                             pretrained=True)
     model = torch.nn.DataParallel(single_model).cuda()
     if args.pretrained:
@@ -226,12 +259,81 @@ def train_seg(args):
             shutil.copyfile(checkpoint_path, history_path)
 
 
+def test_seg(args):
+    batch_size = args.batch_size
+    num_workers = args.num_workers
+
+    for k, v in args.__dict__.items():
+        print(k, ':', v)
+
+    single_model = DenseSeg(model_name=args.arch,
+                            classes=args.num_class,
+                            transition_layer=args.transition_layer,
+                            conv_num_features=args.conv_num_features,
+                            out_channels_num=args.out_channels_num,
+                            ppl_out_channels_num=args.ppl_out_channels_num,
+                            dilation=args.dilation,
+                            pretrained=False)
+    model = torch.nn.DataParallel(single_model).cuda()
+    if args.pretrained:
+        checkpoint = torch.load(args.pretrained)
+        model.load_state_dict(checkpoint['state_dict'])
+
+    data_dir = args.data_dir
+    info = json.load(open(os.path.join(data_dir, 'info.json'), 'r'))
+    # data augmentation
+    t = []
+    normalize = data_transform_utils.Normalize(mean=info['mean'], std=info['std'])
+    t.extend([data_transform_utils.ToTensor(), normalize])
+
+    if args.ms:
+        scales = [0.5, 0.75, 1.25, 1.5, 1.75]
+        dataset = SegListMS(data_dir, 'test', data_transform_utils.Compose(t), scales)
+    else:
+        dataset = SegList(data_dir, 'test', data_transform_utils.Compose(t), out_name=True)
+
+    test_loader = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=batch_size, shuffle=False, num_workers=num_workers,
+        pin_memory=False
+    )
+
+    cudnn.benchmark = True
+
+    out_dir = '{}_{}'.format(args.exp_dir[:-22], 'test')
+    if len(args.test_suffix) > 0:
+        out_dir += '_' + args.test_suffix
+    if args.ms:
+        out_dir += '_ms'
+
+    if args.ms:
+        mAP = test_ms(test_loader, model, args.classes, save_vis=True,
+                      has_gt=phase != 'test' or args.with_gt,
+                      output_dir=out_dir,
+                      scales=scales)
+    else:
+        mAP = test(test_loader, model, save_vis=True, output_dir=out_dir)
+
+
 def main():
     config = Configuration()
 
     if config.config.cmd == 'train':
         train_seg(config.config)
+    elif config.config.cmd == 'test':
+        test_seg(config.config)
 
 
 if __name__ == '__main__':
     main()
+"""
+### DenseNet:
+Score 95.348
+
+### DenseNet with dilation:
+Score 95.243
+
+Directly using DenseNet and with dilation (1,1,2,4)
+Score 92.404
+"""
+

@@ -1,5 +1,5 @@
 
-cmd             = 'train'  # ['train', 'test']
+cmd             = 'test'  # ['train', 'test']
 data_dir        = '/media/samsumg_1tb/CITYSCAPE'
 num_class       = 19  # CITYSCAPE number of classes
 
@@ -25,10 +25,13 @@ random_horizontal_flip = 0.5
 transition_layer  = (3, 5, 7, 9, 11)
 conv_num_features = (64, 256, 512, 1024, 1024)
 out_channels_num  = (1, 2, 4, 8, 16)  # (1, 2, 4, 8, 16)  (1, 1, 1, 1, 1)
-dilation          = (2, 2, 4, 8, 16)  # (1, 2, 4, 8, 16)  (1, 1, 1, 1, 1)
+dilation          = (1, 2, 4, 8) #(1, 1, 2, 4) (1, 2, 4, 8)   (1, 1, 1, 1, 1)
 ppl_out_channels_num = (32, 64, 128, 256)
 
 # Validation/Test parameters
 multi_scale     = False
 evaluate        = True
+ms              = False
+test_suffix     = ""
+
 

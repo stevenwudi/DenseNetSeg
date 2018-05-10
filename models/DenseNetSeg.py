@@ -13,6 +13,8 @@ class DenseSeg(nn.Module):
                  conv_num_features=(64, 256, 512, 1024, 1024),
                  out_channels_num=(1, 2, 4, 8, 16),
                  ppl_out_channels_num=(32, 64, 128, 256),
+
+                 dilation=(1, 2, 1, 1),
                  pretrained=False):
         """
         :param model_name: DenseNet model name ['densenet121', 'densenet169', 'densenet201', 'densenet161']
@@ -24,7 +26,7 @@ class DenseSeg(nn.Module):
         """
 
         super(DenseSeg, self).__init__()
-        model = densenet_local.__dict__.get(model_name)(pretrained=pretrained, num_classes=1000)
+        model = densenet_local.__dict__.get(model_name)(pretrained=pretrained, num_classes=1000, dilation=dilation)
 
         # self.layer are the base densenet layers
         self.base_layer = list()
